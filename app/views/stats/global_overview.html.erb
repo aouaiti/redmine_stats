@@ -1,0 +1,77 @@
+<h2><%= l(:label_stats_global_overview) %></h2>
+
+<div class="splitcontent">
+  <div class="splitcontentleft">
+    <div class="box">
+      <h3><%= l(:label_issues_summary) %></h3>
+      <div class="stats-info">
+        <div class="stats-details">
+          <p><%= l(:label_total_issues) %>: <strong><%= @total_issues %></strong></p>
+          <p><%= l(:label_open_issues) %>: <strong><%= @open_issues %></strong></p>
+          <p><%= l(:label_closed_issues) %>: <strong><%= @closed_issues %></strong></p>
+          <p><%= l(:label_completion_rate) %>: <strong><%= @total_issues > 0 ? (@closed_issues.to_f / @total_issues * 100).round(1) : 0 %>%</strong></p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="box">
+      <h3><%= l(:label_top_projects) %></h3>
+      <canvas id="projects-chart" class="chart" data-chart='<%= @projects_chart_data %>'></canvas>
+    </div>
+  </div>
+  
+  <div class="splitcontentright">
+    <div class="box">
+      <h3><%= l(:label_top_users) %></h3>
+      <canvas id="users-chart" class="chart" data-chart='<%= @users_chart_data %>'></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="box">
+  <h3><%= l(:label_projects_with_stats_module) %></h3>
+  <% if @projects.any? %>
+    <table class="list">
+      <thead>
+        <tr>
+          <th><%= l(:label_project) %></th>
+          <th><%= l(:label_open_issues) %></th>
+          <th><%= l(:label_closed_issues) %></th>
+          <th><%= l(:label_total_issues) %></th>
+          <th><%= l(:label_completion_rate) %></th>
+          <th><%= l(:label_health_score) %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @projects.each do |project| %>
+          <tr>
+            <td><%= link_to project.name, project_stats_path(project) %></td>
+            <td><%= project.issues.open.count %></td>
+            <td><%= project.issues.closed.count %></td>
+            <td><%= project.issues.count %></td>
+            <td>
+              <% completion_rate = project.issues.count > 0 ? (project.issues.closed.count.to_f / project.issues.count * 100).round(1) : 0 %>
+              <%= completion_rate %>%
+            </td>
+            <td>
+              <% health_score = RedmineStats::Utils::StatsCalculator.calculate_project_health_score(project) %>
+              <span class="<%= health_score >= 70 ? 'status-success' : (health_score >= 40 ? 'status-warning' : 'status-error') %>">
+                <%= health_score %>
+              </span>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="nodata"><%= l(:label_no_data) %></p>
+  <% end %>
+</div>
+
+<%= render partial: 'includes' %>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    RedmineStats.initCharts();
+  });
+</script> 
