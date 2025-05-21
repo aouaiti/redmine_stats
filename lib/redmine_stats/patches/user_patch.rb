@@ -7,32 +7,76 @@ module RedmineStats
           
           # Count issues created by the user in a project
           def issues_created_count(project=nil, options={})
-            issues = Issue.by_author(id)
-            issues = issues.where(project_id: project.id) if project
+            # Extract the nested options
+            include_subprojects = options[:include_subprojects].nil? ? true : options[:include_subprojects]
+            include_parent_issues = options[:include_parent_issues].nil? ? true : options[:include_parent_issues]
             
-            if options[:from] && options[:to]
-              issues = issues.created_between(options[:from], options[:to])
+            # Start with issues authored by this user
+            base_query = Issue.by_author(id)
+            
+            if project
+              if include_subprojects && include_parent_issues
+                # Get all project issues including related ones
+                project_issues = project.all_issues_with_subprojects_and_relations(options)
+                base_query = base_query.where(id: project_issues.pluck(:id))
+              elsif include_subprojects
+                # Get all issues from the project and its subprojects
+                project_ids = project.self_and_descendants.pluck(:id)
+                base_query = base_query.where(project_id: project_ids)
+              else
+                # Just the current project
+                base_query = base_query.where(project_id: project.id)
+              end
             end
             
-            issues.count
+            # Apply date range filter if provided
+            if options[:from] && options[:to]
+              base_query = base_query.created_between(options[:from], options[:to])
+            end
+            
+            base_query.count
           end
           
           # Count issues assigned to the user
           def issues_assigned_count(project=nil, options={})
-            issues = Issue.by_assigned_to(id)
-            issues = issues.where(project_id: project.id) if project
+            # Extract the nested options
+            include_subprojects = options[:include_subprojects].nil? ? true : options[:include_subprojects]
+            include_parent_issues = options[:include_parent_issues].nil? ? true : options[:include_parent_issues]
             
-            if options[:from] && options[:to]
-              issues = issues.created_between(options[:from], options[:to])
+            # Start with issues assigned to this user
+            base_query = Issue.by_assigned_to(id)
+            
+            if project
+              if include_subprojects && include_parent_issues
+                # Get all project issues including related ones
+                project_issues = project.all_issues_with_subprojects_and_relations(options)
+                base_query = base_query.where(id: project_issues.pluck(:id))
+              elsif include_subprojects
+                # Get all issues from the project and its subprojects
+                project_ids = project.self_and_descendants.pluck(:id)
+                base_query = base_query.where(project_id: project_ids)
+              else
+                # Just the current project
+                base_query = base_query.where(project_id: project.id)
+              end
             end
             
-            issues.count
+            # Apply date range filter if provided
+            if options[:from] && options[:to]
+              base_query = base_query.created_between(options[:from], options[:to])
+            end
+            
+            base_query.count
           end
           
           # Count closed issues by the user
           def closed_issues_count(project=nil, options={})
             from = options[:from] || (Date.today - 12.months)
             to = options[:to] || Date.today
+            
+            # Extract the nested options
+            include_subprojects = options[:include_subprojects].nil? ? true : options[:include_subprojects]
+            include_parent_issues = options[:include_parent_issues].nil? ? true : options[:include_parent_issues]
             
             # Find issues closed by this user through journal entries
             journals = Journal.joins(:details).where(user_id: id)
@@ -41,7 +85,18 @@ module RedmineStats
               .where('journals.created_on BETWEEN ? AND ?', from, to)
             
             if project
-              journals = journals.joins(:issue).where(issues: { project_id: project.id })
+              if include_subprojects && include_parent_issues
+                # Get all project issues including related ones
+                project_issues = project.all_issues_with_subprojects_and_relations(options)
+                journals = journals.where(journalized_id: project_issues.pluck(:id), journalized_type: 'Issue')
+              elsif include_subprojects
+                # Get all issues from the project and its subprojects
+                project_ids = project.self_and_descendants.pluck(:id)
+                journals = journals.joins(:issue).where(issues: { project_id: project_ids })
+              else
+                # Just the current project
+                journals = journals.joins(:issue).where(issues: { project_id: project.id })
+              end
             end
             
             # Count unique issues
@@ -53,13 +108,28 @@ module RedmineStats
             from = options[:from] || (Date.today - 12.months)
             to = options[:to] || Date.today
             
+            # Extract the nested options
+            include_subprojects = options[:include_subprojects].nil? ? true : options[:include_subprojects]
+            include_parent_issues = options[:include_parent_issues].nil? ? true : options[:include_parent_issues]
+            
             # Find comments added by this user
             journals = Journal.where(user_id: id)
               .where("notes IS NOT NULL AND notes != ''")
               .where('journals.created_on BETWEEN ? AND ?', from, to)
             
             if project
-              journals = journals.joins(:issue).where(issues: { project_id: project.id })
+              if include_subprojects && include_parent_issues
+                # Get all project issues including related ones
+                project_issues = project.all_issues_with_subprojects_and_relations(options)
+                journals = journals.where(journalized_id: project_issues.pluck(:id), journalized_type: 'Issue')
+              elsif include_subprojects
+                # Get all issues from the project and its subprojects
+                project_ids = project.self_and_descendants.pluck(:id)
+                journals = journals.joins(:issue).where(issues: { project_id: project_ids })
+              else
+                # Just the current project
+                journals = journals.joins(:issue).where(issues: { project_id: project.id })
+              end
             end
             
             journals.count
@@ -70,13 +140,28 @@ module RedmineStats
             from = options[:from] || (Date.today - 12.months)
             to = options[:to] || Date.today
             
+            # Extract the nested options
+            include_subprojects = options[:include_subprojects].nil? ? true : options[:include_subprojects]
+            include_parent_issues = options[:include_parent_issues].nil? ? true : options[:include_parent_issues]
+            
             # Find status updates made by this user
             journals = Journal.joins(:details).where(user_id: id)
               .where("journal_details.property = 'attr' AND journal_details.prop_key = 'status_id'")
               .where('journals.created_on BETWEEN ? AND ?', from, to)
             
             if project
-              journals = journals.joins(:issue).where(issues: { project_id: project.id })
+              if include_subprojects && include_parent_issues
+                # Get all project issues including related ones
+                project_issues = project.all_issues_with_subprojects_and_relations(options)
+                journals = journals.where(journalized_id: project_issues.pluck(:id), journalized_type: 'Issue')
+              elsif include_subprojects
+                # Get all issues from the project and its subprojects
+                project_ids = project.self_and_descendants.pluck(:id)
+                journals = journals.joins(:issue).where(issues: { project_id: project_ids })
+              else
+                # Just the current project
+                journals = journals.joins(:issue).where(issues: { project_id: project.id })
+              end
             end
             
             journals.count
@@ -87,6 +172,10 @@ module RedmineStats
             from = options[:from] || (Date.today - 12.months)
             to = options[:to] || Date.today
             
+            # Extract the nested options
+            include_subprojects = options[:include_subprojects].nil? ? true : options[:include_subprojects]
+            include_parent_issues = options[:include_parent_issues].nil? ? true : options[:include_parent_issues]
+            
             # Find closed issues that had a due date and were closed before or on that date
             # First find the journals that closed issues
             closing_journals = Journal.joins(:details).where(user_id: id)
@@ -95,7 +184,18 @@ module RedmineStats
               .where('journals.created_on BETWEEN ? AND ?', from, to)
               
             if project
-              closing_journals = closing_journals.joins(:issue).where(issues: { project_id: project.id })
+              if include_subprojects && include_parent_issues
+                # Get all project issues including related ones
+                project_issues = project.all_issues_with_subprojects_and_relations(options)
+                closing_journals = closing_journals.where(journalized_id: project_issues.pluck(:id), journalized_type: 'Issue')
+              elsif include_subprojects
+                # Get all issues from the project and its subprojects
+                project_ids = project.self_and_descendants.pluck(:id)
+                closing_journals = closing_journals.joins(:issue).where(issues: { project_id: project_ids })
+              else
+                # Just the current project
+                closing_journals = closing_journals.joins(:issue).where(issues: { project_id: project.id })
+              end
             end
             
             # Count those where closing date is before due date
@@ -115,140 +215,170 @@ module RedmineStats
             from = options[:from] || (Date.today - 12.months)
             to = options[:to] || Date.today
             
+            # Extract the nested options
+            include_subprojects = options[:include_subprojects].nil? ? true : options[:include_subprojects]
+            include_parent_issues = options[:include_parent_issues].nil? ? true : options[:include_parent_issues]
+            
             # Get closed issues created by this user
-            issues = Issue.by_author(id).closed.where('issues.updated_on BETWEEN ? AND ?', from, to)
-            issues = issues.where(project_id: project.id) if project
+            base_query = Issue.by_author(id).closed.where('issues.updated_on BETWEEN ? AND ?', from, to)
             
-            return 0 if issues.count == 0
-            
-            total_time = 0
-            count = 0
-            
-            issues.each do |issue|
-              resolution = issue.resolution_time
-              if resolution
-                total_time += resolution
-                count += 1
+            if project
+              if include_subprojects && include_parent_issues
+                # Get all project issues including related ones
+                project_issues = project.all_issues_with_subprojects_and_relations(options)
+                base_query = base_query.where(id: project_issues.pluck(:id))
+              elsif include_subprojects
+                # Get all issues from the project and its subprojects
+                project_ids = project.self_and_descendants.pluck(:id)
+                base_query = base_query.where(project_id: project_ids)
+              else
+                # Just the current project
+                base_query = base_query.where(project_id: project.id)
               end
             end
             
-            count > 0 ? (total_time / count) : 0
+            # Calculate average resolution time
+            resolution_times = base_query.map(&:resolution_time).compact
+            resolution_times.any? ? (resolution_times.sum / resolution_times.size) : 0
           end
           
-          # Overall contribution score based on various metrics
+          # Calculate overall contribution score
           def contribution_score(project=nil, options={})
             created = issues_created_count(project, options)
             assigned = issues_assigned_count(project, options)
             closed = closed_issues_count(project, options)
             comments = comments_count(project, options)
-            status_updates = status_updates_count(project, options)
+            updates = status_updates_count(project, options)
             on_time = on_time_resolutions_count(project, options)
             
-            # Enhanced weighted score with more factors
-            not_on_time = closed - on_time       # Calculate not-on-time resolutions
+            # Get all closed issues by the user
+            from = options[:from] || (Date.today - 12.months)
+            to = options[:to] || Date.today
             
-            # Administrative tasks
-            admin_score = (created * 1.0) +       # Creating issues
-                          (assigned * 1.0) +      # Being assigned issues
-                          (closed * 1.0) +        # Closing issues
-                          (comments * 1.0) +      # Making comments
-                          (status_updates * 1.0)  # Updating status
+            # Get all closed issues to determine not-on-time resolutions
+            include_subprojects = options[:include_subprojects].nil? ? true : options[:include_subprojects]
+            include_parent_issues = options[:include_parent_issues].nil? ? true : options[:include_parent_issues]
             
-            # Technical tasks
-            tech_score = (on_time * 3.0) +        # On-time resolutions (higher weight)
-                         (not_on_time * 1.0)      # Not-on-time resolutions
+            # Find issues closed by this user through journal entries
+            closing_journals = Journal.joins(:details).where(user_id: id)
+              .where("journal_details.property = 'attr' AND journal_details.prop_key = 'status_id'")
+              .where("journal_details.value IN (?)", IssueStatus.where(is_closed: true).pluck(:id).map(&:to_s))
+              .where('journals.created_on BETWEEN ? AND ?', from, to)
+              
+            if project
+              if include_subprojects && include_parent_issues
+                # Get all project issues including related ones
+                project_issues = project.all_issues_with_subprojects_and_relations(options)
+                closing_journals = closing_journals.where(journalized_id: project_issues.pluck(:id), journalized_type: 'Issue')
+              elsif include_subprojects
+                # Get all issues from the project and its subprojects
+                project_ids = project.self_and_descendants.pluck(:id)
+                closing_journals = closing_journals.joins(:issue).where(issues: { project_id: project_ids })
+              else
+                # Just the current project
+                closing_journals = closing_journals.joins(:issue).where(issues: { project_id: project.id })
+              end
+            end
+            
+            # Count total closures
+            total_closures = closing_journals.select("DISTINCT journalized_id").count
+            
+            # Calculate not-on-time resolutions (total closures minus on-time closures)
+            not_on_time = total_closures - on_time
+            
+            # Administrative score (issues created, assigned, closed, comments, status changes)
+            admin_score = created + assigned + closed + comments + updates
+            
+            # Technical score (weighted sum of on-time and not-on-time resolutions)
+            tech_score = (on_time * 3) + not_on_time
             
             # Total score
-            score = admin_score + tech_score
-            
-            # Return the final score
-            score.round(1)
+            admin_score + tech_score
           end
           
-          # Get detailed breakdown of contribution components
+          # Get detailed breakdown of contribution
           def contribution_details(project=nil, options={})
             created = issues_created_count(project, options)
             assigned = issues_assigned_count(project, options)
             closed = closed_issues_count(project, options)
             comments = comments_count(project, options)
-            status_updates = status_updates_count(project, options)
+            updates = status_updates_count(project, options)
             on_time = on_time_resolutions_count(project, options)
-            not_on_time = closed - on_time
             
-            # Calculate administrative and technical scores
-            administrative = created + assigned + closed + comments + status_updates
-            technical = on_time * 3.0 + not_on_time * 1.0
+            # Get all closed issues to determine not-on-time resolutions
+            from = options[:from] || (Date.today - 12.months)
+            to = options[:to] || Date.today
+            include_subprojects = options[:include_subprojects].nil? ? true : options[:include_subprojects]
+            include_parent_issues = options[:include_parent_issues].nil? ? true : options[:include_parent_issues]
+            
+            # Find issues closed by this user through journal entries
+            closing_journals = Journal.joins(:details).where(user_id: id)
+              .where("journal_details.property = 'attr' AND journal_details.prop_key = 'status_id'")
+              .where("journal_details.value IN (?)", IssueStatus.where(is_closed: true).pluck(:id).map(&:to_s))
+              .where('journals.created_on BETWEEN ? AND ?', from, to)
+              
+            if project
+              if include_subprojects && include_parent_issues
+                # Get all project issues including related ones
+                project_issues = project.all_issues_with_subprojects_and_relations(options)
+                closing_journals = closing_journals.where(journalized_id: project_issues.pluck(:id), journalized_type: 'Issue')
+              elsif include_subprojects
+                # Get all issues from the project and its subprojects
+                project_ids = project.self_and_descendants.pluck(:id)
+                closing_journals = closing_journals.joins(:issue).where(issues: { project_id: project_ids })
+              else
+                # Just the current project
+                closing_journals = closing_journals.joins(:issue).where(issues: { project_id: project.id })
+              end
+            end
+            
+            # Count total closures
+            total_closures = closing_journals.select("DISTINCT journalized_id").count
+            not_on_time = total_closures - on_time
+            
+            # Calculate administrative and technical components
+            admin_weight = 1.0
+            admin_value = created + assigned + closed + comments + updates
+            
+            # Technical components with weights
+            on_time_weight = 3.0
+            not_on_time_weight = 1.0
+            tech_value = (on_time * on_time_weight) + (not_on_time * not_on_time_weight)
+            
+            # Calculate the total score
+            total_score = (admin_value + tech_value).round(1)
             
             {
               components: {
                 administrative: {
-                  count: administrative,
-                  weight: 1.0,
-                  value: administrative,
+                  value: admin_value.round(1),
+                  count: admin_value,
+                  weight: admin_weight,
                   breakdown: {
                     created: created,
                     assigned: assigned,
                     closed: closed,
                     comments: comments,
-                    status_updates: status_updates
+                    status_updates: updates
                   }
                 },
                 technical: {
+                  value: tech_value.round(1),
                   count: on_time + not_on_time,
-                  weight: 'variable',
-                  value: technical,
+                  weight: 1.0,
                   breakdown: {
                     on_time: {
                       count: on_time,
-                      weight: 3.0,
-                      value: on_time * 3.0
+                      weight: on_time_weight
                     },
                     not_on_time: {
                       count: not_on_time,
-                      weight: 1.0,
-                      value: not_on_time * 1.0
+                      weight: not_on_time_weight
                     }
                   }
                 }
               },
-              original_components: {
-                created: {
-                  count: created,
-                  weight: 1.0,
-                  value: created * 1.0
-                },
-                assigned: {
-                  count: assigned,
-                  weight: 1.0,
-                  value: assigned * 1.0
-                },
-                closed: {
-                  count: closed,
-                  weight: 1.0,
-                  value: closed * 1.0
-                },
-                comments: {
-                  count: comments,
-                  weight: 1.0,
-                  value: comments * 1.0
-                },
-                status_updates: {
-                  count: status_updates,
-                  weight: 1.0,
-                  value: status_updates * 1.0
-                },
-                on_time: {
-                  count: on_time,
-                  weight: 3.0,
-                  value: on_time * 3.0
-                },
-                not_on_time: {
-                  count: not_on_time,
-                  weight: 1.0,
-                  value: not_on_time * 1.0
-                }
-              },
-              total: administrative + technical
+              total: total_score
             }
           end
         end

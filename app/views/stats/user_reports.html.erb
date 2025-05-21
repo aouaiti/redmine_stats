@@ -1,7 +1,7 @@
 <div class="contextual">
-  <%= link_to l(:label_stats_overview), project_stats_path(@project), class: 'icon icon-stats' %>
-  <%= link_to l(:label_project_reports), project_reports_project_stats_path(@project), class: 'icon icon-projects' %>
-  <%= link_to l(:label_issue_reports), issue_reports_project_stats_path(@project), class: 'icon icon-issue' %>
+  <%= link_to l(:label_stats_overview), project_stats_path(@project, :from => @from.to_s, :to => @to.to_s, :include_subprojects => @include_subprojects, :include_parent_issues => @include_parent_issues), class: 'icon icon-stats' %>
+  <%= link_to l(:label_project_reports), project_reports_project_stats_path(@project, :from => @from.to_s, :to => @to.to_s, :include_subprojects => @include_subprojects, :include_parent_issues => @include_parent_issues), class: 'icon icon-projects' %>
+  <%= link_to l(:label_issue_reports), issue_reports_project_stats_path(@project, :from => @from.to_s, :to => @to.to_s, :include_subprojects => @include_subprojects, :include_parent_issues => @include_parent_issues), class: 'icon icon-issue' %>
 </div>
 
 <h2><%= l(:label_user_reports) %></h2>
@@ -13,6 +13,8 @@
       <%= hidden_field_tag 'user_id', params[:user_id] if params[:user_id].present? %>
       <%= l(:label_from) %>: <%= date_field_tag 'from', @from, size: 10 %>
       <%= l(:label_to) %>: <%= date_field_tag 'to', @to, size: 10 %>
+      <%= hidden_field_tag 'include_subprojects', @include_subprojects %>
+      <%= hidden_field_tag 'include_parent_issues', @include_parent_issues %>
       <%= submit_tag l(:button_apply), name: nil, class: 'button-small' %>
     </p>
   <% end %>
@@ -22,10 +24,13 @@
   <h3><%= l(:label_user) %>: <%= @user.name %></h3>
   
   <% 
-    # Get detailed contribution breakdown
-    contribution_details = @user.contribution_details(@project, from: @from, to: @to)
-    components = contribution_details[:components]
-    total_score = contribution_details[:total].to_f
+    # Use the detailed contribution data from controller
+    components = @contribution_details[:components]
+    total_score = @contribution_details[:total].to_f
+    
+    # Extract values for template
+    admin_value = components[:administrative][:value].to_f
+    tech_value = components[:technical][:value].to_f
   %>
   
   <div class="splitcontent">
@@ -52,7 +57,7 @@
         
         <div class="user-score-summary">
           <div class="contribution-score-box">
-            <div class="contribution-score-value"><%= total_score.round(1) %></div>
+            <div class="contribution-score-value"><%= @contribution_score.round(1) %></div>
             <div class="contribution-score-label"><%= l(:label_contribution_score) || "Score de contribution" %></div>
           </div>
           
@@ -67,9 +72,6 @@
                 </tr>
               </thead>
               <tbody>
-                <% admin_value = components[:administrative][:value].to_f %>
-                <% tech_value = components[:technical][:value].to_f %>
-              
                 <!-- Administrative tasks -->
                 <tr>
                   <td>
@@ -78,15 +80,15 @@
                       <%= l(:label_administrative_tasks) || "Charge administratif" %>
                     </div>
                     <div class="component-desc">
-                      <%= "#{l(:label_issues_created) || 'Tickets créés'}: #{components[:administrative][:breakdown][:created]}" %>,
-                      <%= "#{l(:label_issues_assigned) || 'Tickets assignés'}: #{components[:administrative][:breakdown][:assigned]}" %>,
-                      <%= "#{l(:label_issues_closed) || 'Tickets fermés'}: #{components[:administrative][:breakdown][:closed]}" %>,
-                      <%= "#{l(:label_comments) || 'Commentaires'}: #{components[:administrative][:breakdown][:comments]}" %>,
-                      <%= "#{l(:label_status_updates) || 'Mises à jour de statut'}: #{components[:administrative][:breakdown][:status_updates]}" %>
+                      <%= "#{l(:label_issues_created) || 'Tickets créés'}: #{components[:administrative][:breakdown][:created] || 0}" %>,
+                      <%= "#{l(:label_issues_assigned) || 'Tickets assignés'}: #{components[:administrative][:breakdown][:assigned] || 0}" %>,
+                      <%= "#{l(:label_issues_closed) || 'Tickets fermés'}: #{components[:administrative][:breakdown][:closed] || 0}" %>,
+                      <%= "#{l(:label_comments) || 'Commentaires'}: #{components[:administrative][:breakdown][:comments] || 0}" %>,
+                      <%= "#{l(:label_status_updates) || 'Mises à jour de statut'}: #{components[:administrative][:breakdown][:status_updates] || 0}" %>
                     </div>
                   </td>
-                  <td class="numeric"><%= components[:administrative][:count] %></td>
-                  <td class="numeric">× <%= components[:administrative][:weight] %></td>
+                  <td class="numeric"><%= components[:administrative][:count] || 0 %></td>
+                  <td class="numeric">× <%= components[:administrative][:weight] || 1 %></td>
                   <td class="numeric">
                     <strong><%= admin_value.round(1) %></strong>
                     <div class="progress-bar">
@@ -103,12 +105,12 @@
                       <%= l(:label_technical_tasks) || "Charge technique" %>
                     </div>
                     <div class="component-desc">
-                      <%= "#{l(:label_on_time_resolutions) || 'Résolutions à temps'}: #{components[:technical][:breakdown][:on_time][:count]} × #{components[:technical][:breakdown][:on_time][:weight]}" %>,
-                      <%= "#{l(:label_not_on_time_resolutions) || 'Résolutions en retard'}: #{components[:technical][:breakdown][:not_on_time][:count]} × #{components[:technical][:breakdown][:not_on_time][:weight]}" %>
+                      <%= "#{l(:label_on_time_resolutions) || 'Résolutions à temps'}: #{components[:technical][:breakdown][:on_time][:count] || 0} × #{components[:technical][:breakdown][:on_time][:weight] || 0}" %>,
+                      <%= "#{l(:label_not_on_time_resolutions) || 'Résolutions en retard'}: #{components[:technical][:breakdown][:not_on_time][:count] || 0} × #{components[:technical][:breakdown][:not_on_time][:weight] || 0}" %>
                     </div>
                   </td>
-                  <td class="numeric"><%= components[:technical][:count] %></td>
-                  <td class="numeric"><%= components[:technical][:weight] %></td>
+                  <td class="numeric"><%= components[:technical][:count] || 0 %></td>
+                  <td class="numeric"><%= components[:technical][:weight] || 1 %></td>
                   <td class="numeric">
                     <strong><%= tech_value.round(1) %></strong>
                     <div class="progress-bar">
@@ -157,11 +159,13 @@
               :onchange => "this.form.submit();" %>
             <%= hidden_field_tag 'from', @from %>
             <%= hidden_field_tag 'to', @to %>
+            <%= hidden_field_tag 'include_subprojects', @include_subprojects %>
+            <%= hidden_field_tag 'include_parent_issues', @include_parent_issues %>
           </p>
         <% end %>
         
         <p>
-          <%= link_to l(:label_all_users_comparison) || "Comparaison de tous les utilisateurs", user_reports_project_stats_path(@project, from: @from, to: @to), class: 'icon icon-user-group' %>
+          <%= link_to l(:label_all_users_comparison) || "Comparaison de tous les utilisateurs", user_reports_project_stats_path(@project, from: @from, to: @to, include_subprojects: @include_subprojects, include_parent_issues: @include_parent_issues), class: 'icon icon-user-group' %>
         </p>
       </div>
     </div>
@@ -195,24 +199,37 @@
                 <% if index < 3 %>
                   <span class="contributor-rank rank-<%= index + 1 %>"><%= index + 1 %></span>
                 <% end %>
-                <%= link_to stats[:user].name, user_reports_project_stats_path(@project, user_id: stats[:user].id, from: @from, to: @to) %>
+                <%= link_to stats[:user].name, user_reports_project_stats_path(@project, :user_id => stats[:user].id, :from => @from.to_s, :to => @to.to_s, :include_subprojects => @include_subprojects, :include_parent_issues => @include_parent_issues) %>
               </td>
               <td>
                 <% 
-                  user_details = stats[:user].contribution_details(@project, from: @from, to: @to)
-                  admin_score = user_details[:components][:administrative][:value].to_f.round(1)
+                  begin
+                    user_details = stats[:user].contribution_details(@project, from: @from, to: @to, include_subprojects: @include_subprojects, include_parent_issues: @include_parent_issues)
+                    user_details ||= { components: { administrative: { value: 0 } } }
+                    admin_score = user_details[:components][:administrative][:value].to_f.round(1)
+                  rescue => e
+                    Rails.logger.error "Error getting admin score: #{e.message}"
+                    admin_score = 0
+                  end
                 %>
                 <%= admin_score %>
               </td>
               <td>
-                <% tech_score = user_details[:components][:technical][:value].to_f.round(1) %>
+                <% 
+                  begin
+                    tech_score = user_details[:components][:technical].present? ? user_details[:components][:technical][:value].to_f.round(1) : 0
+                  rescue => e
+                    Rails.logger.error "Error getting tech score: #{e.message}"
+                    tech_score = 0
+                  end
+                %>
                 <%= tech_score %>
               </td>
               <td>
-                <strong><%= stats[:contribution_score] %></strong>
+                <strong><%= stats[:contribution_score] || 0 %></strong>
                 <div class="progress-bar">
-                  <% max_score = @user_stats.map { |s| s[:contribution_score] }.max %>
-                  <% percentage = max_score > 0 ? (stats[:contribution_score].to_f / max_score * 100) : 0 %>
+                  <% max_score = @user_stats.map { |s| s[:contribution_score] || 0 }.max %>
+                  <% percentage = max_score > 0 ? ((stats[:contribution_score] || 0).to_f / max_score * 100) : 0 %>
                   <div class="progress-bar-value" style="width: <%= percentage %>%"></div>
                 </div>
               </td>

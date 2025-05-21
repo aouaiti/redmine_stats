@@ -18,13 +18,17 @@ fr:
   text_resolution_rate: "Taux de résolution"
   text_overdue_issues: "Demandes en retard"
   text_resolution_time: "Temps de résolution"
+  text_overdue_penalty: "Pénalité de retard"
   health_component_resolution_rate_desc: "Pourcentage de demandes résolues dans la période"
   health_component_overdue_desc: "Mesure la façon dont le projet gère les échéances"
   health_component_time_desc: "Rapidité avec laquelle les demandes sont résolues"
   label_total_issues: "Total des demandes"
   label_open_issues: "Demandes ouvertes"
   label_closed_issues: "Demandes fermées"
+  label_resolved_issues: "Demandes résolues"
+  label_resolved_closed_issues: "Demandes résolues/fermées"
   label_completion_rate: "Taux d'achèvement"
+  label_resolution_rate: "Taux de résolution"
   label_issues_trend: "Tendance des demandes"
   label_view_stats: "Voir les statistiques"
   label_issues_summary: "Résumé des demandes"
@@ -66,6 +70,7 @@ fr:
   label_all_users_comparison: "Comparaison de tous les utilisateurs"
   label_user_comparison: "Comparaison des utilisateurs"
   label_user_statistics: "Statistiques des utilisateurs"
+  label_select_user: "Sélectionner un utilisateur"
   
   # Issue-related labels
   label_issues_by_status: "Demandes par statut"
@@ -106,6 +111,10 @@ fr:
   label_top_projects: "Projets principaux"
   label_top_users: "Utilisateurs principaux"
   label_project: "Projet"
+  label_issue_distribution: "Distribution des demandes"
+  text_top_projects_description: "Projets avec le plus grand nombre de demandes et d'activité (incluant les sous-projets et les demandes liées)"
+  text_top_users_description: "Utilisateurs avec la plus grande activité dans tous les projets (demandes créées, assignées, mises à jour et commentaires)"
+  label_activity_score: "Score d'activité"
   
   # Chart themes and settings
   label_general_settings: "Paramètres généraux"
@@ -136,15 +145,23 @@ fr:
   button_export: "Exporter"
   button_snapshot: "Prendre un instantané"
   
-  # Generic
-  label_no_data: "Aucune donnée disponible"
-  
   # Activity types and metrics
   label_activity: "Activité"
   label_count: "Nombre"
-  label_administrative_tasks: "Charge administratif"
+  label_administrative_tasks: "Charge administrative"
   label_technical_tasks: "Charge technique"
   label_on_time_resolutions: "Résolutions à temps"
   label_not_on_time_resolutions: "Résolutions en retard"
   label_status_updates: "Mises à jour de statut"
-  label_comments: "Commentaires" 
+  label_comments: "Commentaires"
+  
+  # Generic
+  label_no_data: "Aucune donnée disponible"
+  
+  # Nested options
+  label_nested_options: "Options de calcul imbriqué"
+  label_include_subprojects: "Inclure les sous-projets"
+  label_include_parent_issues: "Inclure les demandes parentes/enfants"
+  tooltip_include_subprojects: "Inclure les demandes des projets enfants dans les calculs statistiques"
+  tooltip_include_parent_issues: "Inclure les demandes parentes et leurs enfants dans les calculs statistiques"
+  text_nested_options_explanation: "Ces options contrôlent la profondeur d'inclusion des données dans la hiérarchie de votre projet. L'activation de ces options vous donne une vue plus complète de l'écosystème de votre projet." 

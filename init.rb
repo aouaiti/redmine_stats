@@ -6,7 +6,7 @@ Redmine::Plugin.register :redmine_stats do
   author 'AOUAITI Ahmed'
   description 'A plugin for Redmine to generate detailed statistics and reports about contributions and issues'
   version '1.0.0'
-  url 'https://github.com/redmine/redmine_stats'
+  url 'https://github.com/aouaiti/redmine_stats'
   
   requires_redmine version_or_higher: '6.0.0'
   

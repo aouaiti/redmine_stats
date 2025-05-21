@@ -18,13 +18,17 @@ en:
   text_resolution_rate: Resolution Rate
   text_overdue_issues: Overdue Issues
   text_resolution_time: Resolution Time
+  text_overdue_penalty: Overdue Penalty
   health_component_resolution_rate_desc: Percentage of issues resolved in the period
   health_component_overdue_desc: Measures how well the project manages deadlines
   health_component_time_desc: How quickly issues are being resolved
   label_total_issues: Total Issues
   label_open_issues: Open Issues
   label_closed_issues: Closed Issues
+  label_resolved_issues: Resolved Issues
+  label_resolved_closed_issues: Resolved/Closed Issues
   label_completion_rate: Completion Rate
+  label_resolution_rate: Resolution Rate
   label_issues_trend: Issues Trend
   label_view_stats: View Statistics
   label_issues_summary: Issues Summary
@@ -66,6 +70,7 @@ en:
   label_all_users_comparison: All Users Comparison
   label_user_comparison: User Comparison
   label_user_statistics: User Statistics
+  label_select_user: Select a user
   
   # Issue-related labels
   label_issues_by_status: Issues by Status
@@ -106,6 +111,10 @@ en:
   label_top_projects: Top Projects
   label_top_users: Top Users
   label_project: Project
+  label_issue_distribution: Issue Distribution
+  text_top_projects_description: Projects with the highest number of issues and activity (including subprojects and child issues)
+  text_top_users_description: Users with the highest activity across all projects (issues created, assigned, updated and comments)
+  label_activity_score: Activity Score
   
   # Chart themes and settings
   label_general_settings: General Settings
@@ -136,5 +145,24 @@ en:
   button_export: Export
   button_snapshot: Take Snapshot
   
+  # Activity types and metrics
+  label_activity: Activity
+  label_count: Count
+  label_administrative_tasks: Administrative Tasks
+  label_technical_tasks: Technical Tasks
+  label_on_time_resolutions: On-time Resolutions
+  label_not_on_time_resolutions: Not-on-time Resolutions
+  label_status_updates: Status Updates
+  label_comments: Comments
+  
   # Generic
-  label_no_data: No data available 
+  label_no_data: No data available
+  
+  # Nested options
+  label_nested_options: "Nested Calculation Options"
+  label_include_subprojects: "Include subprojects"
+  label_include_parent_issues: "Include parent/child issues"
+  tooltip_include_subprojects: "Include issues from child projects in statistics calculations"
+  tooltip_include_parent_issues: "Include parent issues and their children in statistics calculations"
+  text_nested_options_explanation: "These options control how deeply the statistics include data across your project hierarchy. Enabling these options gives you a more complete view of your project ecosystem."
+  

@@ -8,21 +8,34 @@
         <div class="stats-details">
           <p><%= l(:label_total_issues) %>: <strong><%= @total_issues %></strong></p>
           <p><%= l(:label_open_issues) %>: <strong><%= @open_issues %></strong></p>
+          <p><%= l(:label_resolved_issues) %>: <strong><%= @resolved_issues %></strong></p>
           <p><%= l(:label_closed_issues) %>: <strong><%= @closed_issues %></strong></p>
-          <p><%= l(:label_completion_rate) %>: <strong><%= @total_issues > 0 ? (@closed_issues.to_f / @total_issues * 100).round(1) : 0 %>%</strong></p>
+          <p><%= l(:label_completion_rate) %>: <strong><%= @total_issues > 0 ? ((@resolved_issues + @closed_issues).to_f / @total_issues * 100).round(1) : 0 %>%</strong></p>
         </div>
       </div>
     </div>
     
     <div class="box">
-      <h3><%= l(:label_top_projects) %></h3>
-      <canvas id="projects-chart" class="chart" data-chart='<%= @projects_chart_data %>'></canvas>
+      <h3><%= l(:label_issue_distribution) %></h3>
+      <canvas id="issue-distribution-chart" class="chart" data-chart='<%= @issue_distribution_data %>'></canvas>
+    </div>
+    
+    <div class="box">
+      <h3><%= l(:label_issues_by_status) %></h3>
+      <canvas id="global-status-chart" class="chart" data-chart='<%= @global_status_chart_data %>'></canvas>
     </div>
   </div>
   
   <div class="splitcontentright">
     <div class="box">
+      <h3><%= l(:label_top_projects) %></h3>
+      <p class="chart-description"><%= l(:text_top_projects_description) || "Projects with the highest number of issues and activity (including subprojects and child issues)" %></p>
+      <canvas id="projects-chart" class="chart" data-chart='<%= @projects_chart_data %>'></canvas>
+    </div>
+    
+    <div class="box">
       <h3><%= l(:label_top_users) %></h3>
+      <p class="chart-description"><%= l(:text_top_users_description) || "Users with the highest activity across all projects (issues created, assigned, updated and comments)" %></p>
       <canvas id="users-chart" class="chart" data-chart='<%= @users_chart_data %>'></canvas>
     </div>
   </div>
@@ -36,6 +49,7 @@
         <tr>
           <th><%= l(:label_project) %></th>
           <th><%= l(:label_open_issues) %></th>
+          <th><%= l(:label_resolved_issues) %></th>
           <th><%= l(:label_closed_issues) %></th>
           <th><%= l(:label_total_issues) %></th>
           <th><%= l(:label_completion_rate) %></th>
@@ -44,17 +58,36 @@
       </thead>
       <tbody>
         <% @projects.each do |project| %>
+          <% 
+            # Get comprehensive counts using the improved method that handles all nested relationships
+            all_issues = project.all_issues_with_subprojects_and_relations(
+              include_subprojects: true,
+              include_parent_issues: true
+            )
+            
+            open_count = all_issues.open.count
+            resolved_count = all_issues.resolved_or_closed.count - all_issues.closed.count
+            closed_count = all_issues.closed.count
+            total_count = all_issues.count
+            
+            # Calculate completion rate
+            completion_rate = total_count > 0 ? ((resolved_count + closed_count).to_f / total_count * 100).round(1) : 0
+            
+            # Get health score with all options enabled
+            health_score = RedmineStats::Utils::StatsCalculator.calculate_project_health_score(
+              project, 
+              include_subprojects: true,
+              include_parent_issues: true
+            )
+          %>
           <tr>
             <td><%= link_to project.name, project_stats_path(project) %></td>
-            <td><%= project.issues.open.count %></td>
-            <td><%= project.issues.closed.count %></td>
-            <td><%= project.issues.count %></td>
+            <td><%= open_count %></td>
+            <td><%= resolved_count %></td>
+            <td><%= closed_count %></td>
+            <td><%= total_count %></td>
+            <td><%= completion_rate %>%</td>
             <td>
-              <% completion_rate = project.issues.count > 0 ? (project.issues.closed.count.to_f / project.issues.count * 100).round(1) : 0 %>
-              <%= completion_rate %>%
-            </td>
-            <td>
-              <% health_score = RedmineStats::Utils::StatsCalculator.calculate_project_health_score(project) %>
               <span class="<%= health_score >= 70 ? 'status-success' : (health_score >= 40 ? 'status-warning' : 'status-error') %>">
                 <%= health_score %>
               </span>

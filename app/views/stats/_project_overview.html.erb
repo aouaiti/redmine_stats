@@ -3,22 +3,33 @@
   
   <div class="stats-mini">
     <div class="health-score">
-      <div class="gauge-mini" data-score="<%= RedmineStats::Utils::StatsCalculator.calculate_project_health_score(project) %>">
-        <div class="gauge-mini-value"><%= RedmineStats::Utils::StatsCalculator.calculate_project_health_score(project) %></div>
+      <div class="gauge-mini" data-score="<%= RedmineStats::Utils::StatsCalculator.calculate_project_health_score(project, include_subprojects: true, include_parent_issues: true) %>">
+        <div class="gauge-mini-value"><%= RedmineStats::Utils::StatsCalculator.calculate_project_health_score(project, include_subprojects: true, include_parent_issues: true) %></div>
       </div>
       <p><%= l(:label_health_score) %></p>
     </div>
     
     <div class="stats-counts">
+      <% 
+        # Get comprehensive counts using the improved method
+        all_issues = project.all_issues_with_subprojects_and_relations(
+          include_subprojects: true,
+          include_parent_issues: true
+        )
+        
+        open_count = all_issues.open.count
+        closed_count = all_issues.closed.count
+        total_count = all_issues.count
+        completion_rate = total_count > 0 ? (closed_count.to_f / total_count * 100).round : 0
+      %>
       <p>
-        <span class="count"><%= project.issues.open.count %></span>
+        <span class="count"><%= open_count %></span>
         <span class="label"><%= l(:label_open_issues) %></span>
       </p>
       <p>
-        <span class="count"><%= project.issues.where.not(closed_on: nil).count %></span>
+        <span class="count"><%= closed_count %></span>
         <span class="label"><%= l(:label_closed_issues) %></span>
       </p>
-      <% completion_rate = project.issues.count > 0 ? (project.issues.where.not(closed_on: nil).count.to_f / project.issues.count * 100).round : 0 %>
       <div class="progress-bar <%= completion_rate >= 70 ? 'progress-bar-green' : (completion_rate >= 40 ? 'progress-bar-yellow' : 'progress-bar-red') %>">
         <div class="progress-bar-value" style="width: <%= completion_rate %>%;"></div>
       </div>

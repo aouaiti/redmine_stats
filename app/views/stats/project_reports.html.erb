@@ -167,16 +167,26 @@
             <div class="metric-label"><%= l(:label_total_issues) || "Total des demandes" %></div>
           </div>
           <div class="metric-box">
-            <div class="metric-value"><%= detailed_health[:metrics][:closed_issues] %></div>
-            <div class="metric-label"><%= l(:label_closed_issues) || "Demandes fermées" %></div>
+            <div class="metric-value"><%= detailed_health[:metrics][:resolved_or_closed_issues] %></div>
+            <div class="metric-label"><%= l(:label_resolved_closed_issues) || "Demandes résolues/fermées" %></div>
           </div>
           <div class="metric-box">
             <div class="metric-value"><%= detailed_health[:metrics][:overdue_issues] %></div>
             <div class="metric-label"><%= l(:label_overdue_issues) || "Demandes en retard" %></div>
           </div>
           <div class="metric-box">
-            <div class="metric-value"><%= distance_of_time_in_words(0, detailed_health[:metrics][:avg_resolution_time]) if detailed_health[:metrics][:avg_resolution_time] > 0 %></div>
+            <div class="metric-value">
+              <% if detailed_health[:metrics][:avg_resolution_time] && detailed_health[:metrics][:avg_resolution_time] > 0 %>
+                <%= distance_of_time_in_words(0, detailed_health[:metrics][:avg_resolution_time]) %>
+              <% else %>
+                <%= l(:label_no_data) || "No data" %>
+              <% end %>
+            </div>
             <div class="metric-label"><%= l(:label_avg_resolution_time) || "Temps moyen de résolution" %></div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-value"><%= detailed_health[:components][:resolution_rate].round(1) %>%</div>
+            <div class="metric-label"><%= l(:label_resolution_rate) || "Taux de résolution" %></div>
           </div>
         </div>
       </div>

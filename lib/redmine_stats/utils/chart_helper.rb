@@ -41,6 +41,9 @@ module RedmineStats
                   total = data_hash.values.sum
                   percentage = ((value.to_f / total) * 100).round(1)
                   "#{label}: #{value} (#{percentage}%)"
+                end,
+                afterLabel: lambda do |tooltipItems|
+                  "Includes nested projects and related issues"
                 end
               }
             }
@@ -124,6 +127,9 @@ module RedmineStats
                   if tooltipItems.length > 0
                     return string_labels[tooltipItems[0][:dataIndex]]
                   end
+                end,
+                afterLabel: lambda do |tooltipItems|
+                  "Includes nested projects and related issues"
                 end
               }
             }
@@ -202,8 +208,7 @@ module RedmineStats
             fontSize: 16
           },
           legend: {
-            display: (chart_data[:datasets].size > 1 || options[:dataset_label].present?),
-            position: options[:legend_position] || 'top',
+            display: true,
             labels: {
               boxWidth: 12
             }
@@ -217,6 +222,20 @@ module RedmineStats
                 minRotation: 45
               }
             }]
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                title: lambda do |tooltipItems|
+                  if tooltipItems.length > 0
+                    return string_labels[tooltipItems[0][:dataIndex]]
+                  end
+                end,
+                afterLabel: lambda do |tooltipItem|
+                  "Includes nested projects and related issues"
+                end
+              }
+            }
           }
         }
         
@@ -295,6 +314,9 @@ module RedmineStats
                   value = data_hash.values[tooltipItem[:dataIndex]]
                   label = string_labels[tooltipItem[:dataIndex]]
                   "#{tooltipItem.dataset.label}: #{value}"
+                end,
+                afterLabel: lambda do |tooltipItem|
+                  "Includes nested projects and related issues"
                 end
               }
             }

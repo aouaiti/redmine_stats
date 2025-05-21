@@ -1,7 +1,7 @@
 <div class="contextual">
-  <%= link_to l(:label_user_reports), user_reports_project_stats_path(@project), class: 'icon icon-user' %>
-  <%= link_to l(:label_project_reports), project_reports_project_stats_path(@project), class: 'icon icon-projects' %>
-  <%= link_to l(:label_issue_reports), issue_reports_project_stats_path(@project), class: 'icon icon-issue' %>
+  <%= link_to l(:label_user_reports), user_reports_project_stats_path(@project, :from => @from.to_s, :to => @to.to_s, :include_subprojects => @include_subprojects, :include_parent_issues => @include_parent_issues), class: 'icon icon-user' %>
+  <%= link_to l(:label_project_reports), project_reports_project_stats_path(@project, :from => @from.to_s, :to => @to.to_s, :include_subprojects => @include_subprojects, :include_parent_issues => @include_parent_issues), class: 'icon icon-projects' %>
+  <%= link_to l(:label_issue_reports), issue_reports_project_stats_path(@project, :from => @from.to_s, :to => @to.to_s, :include_subprojects => @include_subprojects, :include_parent_issues => @include_parent_issues), class: 'icon icon-issue' %>
 </div>
 
 <h2><%= l(:label_stats) %> - <%= @project.name %></h2>
@@ -35,13 +35,14 @@
         <p><strong><%= l(:label_health_score_explanation) %></strong></p>
         <p><%= l(:text_health_score_components) %></p>
         <ul>
-          <li><%= l(:text_resolution_rate) %> (40%)</li>
-          <li><%= l(:text_overdue_issues) %> (30%)</li>
-          <li><%= l(:text_resolution_time) %> (30%)</li>
+          <li><%= l(:text_resolution_rate) %> (40%) - <%= l(:health_component_resolution_rate_desc) %></li>
+          <li><%= l(:text_overdue_issues) %> (30%) - <%= l(:health_component_overdue_desc) %></li>
+          <li><%= l(:text_resolution_time) %> (30%) - <%= l(:health_component_time_desc) %></li>
         </ul>
+        <p><%= l(:text_resolved_closed_issues_included) || "Both 'Resolved' and 'Closed' statuses are included in calculations" %></p>
         <div class="health-score-formula">
           Score = (Resolution Rate × 0.4) + <br>
-          ((100 - Overdue Penalty) × 0.3) + <br>
+          ((100 - <%= l(:text_overdue_penalty) %>) × 0.3) + <br>
           (Time Factor × 0.3)
         </div>
       </div>
@@ -152,6 +153,10 @@
             <div class="metric-label"><%= l(:label_open_issues) %></div>
           </div>
           <div class="metric-box">
+            <div class="metric-value"><%= @resolved_issues_count %></div>
+            <div class="metric-label"><%= l(:label_resolved_issues) %></div>
+          </div>
+          <div class="metric-box">
             <div class="metric-value"><%= @closed_issues_count %></div>
             <div class="metric-label"><%= l(:label_closed_issues) %></div>
           </div>
@@ -205,12 +210,12 @@
                   <% if index < 3 %>
                     <span class="contributor-rank rank-<%= index + 1 %>"><%= index + 1 %></span>
                   <% end %>
-                  <%= link_to contributor[:user].name, user_reports_project_stats_path(@project, user_id: contributor[:user].id) %>
+                  <%= link_to contributor[:user].name, user_reports_project_stats_path(@project, :user_id => contributor[:user].id, :from => @from.to_s, :to => @to.to_s, :include_subprojects => @include_subprojects, :include_parent_issues => @include_parent_issues) %>
                 </td>
                 <td>
                   <% 
                     # Get the administrative score for this user
-                    user_details = contributor[:user].contribution_details(@project, from: @from, to: @to)
+                    user_details = contributor[:user].contribution_details(@project, from: @from, to: @to, include_subprojects: @include_subprojects, include_parent_issues: @include_parent_issues)
                     admin_score = user_details[:components][:administrative][:value].to_f.round(1)  # Use to_f to handle nil values
                   %>
                   <%= admin_score %>
@@ -223,7 +228,7 @@
                   <%= tech_score %>
                 </td>
                 <td>
-                  <strong><%= contributor[:score] %></strong>
+                  <strong><%= contributor[:score].round(1) %></strong>
                   <div class="progress-bar">
                     <% max_score = @top_contributors.map { |c| c[:score] }.max %>
                     <% percentage = max_score > 0 ? (contributor[:score].to_f / max_score * 100) : 0 %>
